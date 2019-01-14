@@ -60,6 +60,18 @@ router.get('/favoriteParks/:id', requireToken, (req, res) => {
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
 })
+
+// UPDATE
+router.patch('/favoriteParks/:id/update', requireToken, (req, res) => {
+  // req.params.id will be set based on the `:id` in the route
+  FavoriteParks.findById(req.params.id)
+    .then(handle404)
+    .then(favoriteParks => {
+      // pass the `req` object and the Mongoose record to `requireOwnership`
+      // it will throw an error if the current user isn't the owner
+      requireOwnership(req, favoriteParks)
+      return favoriteParks.update(req.body.favoriteParks)
+    })
     .then(favoriteParks => res.status(200).json({ favoriteParks: favoriteParks }))
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
