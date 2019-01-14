@@ -54,7 +54,7 @@ router.get('/exploreParks/:id', (req, res) => {
       // take list data, and form into comma seperated list
       const parks = parksList.list.toString()
       console.log(parks)
-      // create a query to the NPS api using the park codes with the parksList
+      // create a query to the NPS api using the park codes within the parksList
       return fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parks}&fields=images`)
         // returns the response in json format
         .then(res => res.json())
