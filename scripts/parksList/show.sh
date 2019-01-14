@@ -1,7 +1,7 @@
 #!/bin/sh
 
 API="http://localhost:4741"
-URL_PATH="/parksList"
+URL_PATH="/favoriteParks"
 
 curl "${API}${URL_PATH}/${ID}" \
   --include \
