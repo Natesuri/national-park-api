@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
   },
   userList: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ParksList',
+    ref: 'FavoriteParks',
     required: false
   },
   token: String

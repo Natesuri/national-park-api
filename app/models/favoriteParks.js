@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const parksListSchema = new mongoose.Schema({
+const favoriteParksSchema = new mongoose.Schema({
   list: {
     type: Array,
     required: true
@@ -14,4 +14,4 @@ const parksListSchema = new mongoose.Schema({
   timestamps: true
 })
 
-module.exports = mongoose.model('ParksList', parksListSchema)
+module.exports = mongoose.model('FavoriteParks', favoriteParksSchema)
