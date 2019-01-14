@@ -77,6 +77,28 @@ router.patch('/favoriteParks/:id/update', requireToken, (req, res) => {
     .catch(err => handle(err, res))
 })
 
+// DELETE
+router.delete('/favoriteParks/:id/delete', requireToken, (req, res) => {
+  FavoriteParks.findById(req.params.id)
+    .then(handle404)
+    .then(favoriteParks => {
+      // throw an error if current user doesn't own `favoriteParks`
+      requireOwnership(req, favoriteParks)
+      User.findById(favoriteParks.owner)
+        .then(user => {
+          // changes the ParksList key in User to null 
+          user.userList = null
+          return user.save()
+        })
+      // delete the favoriteParks ONLY IF the above didn't throw
+      favoriteParks.remove()
+    })
+    // send back 204 and no content if the deletion succeeded
+    .then(() => res.sendStatus(204))
+    // if an error occurs, pass it to the handler
+    .catch(err => handle(err, res))
+})
+
 // EXPLORE PARKS
 // GET PARK DATA FROM NPS API
 router.get('/exploreParks/:id', (req, res) => {
@@ -117,10 +139,9 @@ router.post('/favoriteParks', requireToken, (req, res) => {
   FavoriteParks.create(req.body.favoriteParks)
     // respond to succesful `create` with status 201 and JSON of new "post"
     .then(park => {
-      const parkId = park._id
       User.findById(req.body.favoriteParks.owner)
         .then(user => {
-          user.userList = parkId
+          user.userList = park._id
           return user.save()
         })
       return park
