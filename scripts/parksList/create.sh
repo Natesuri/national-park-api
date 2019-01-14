@@ -10,7 +10,7 @@ curl "${API}${URL_PATH}" \
   --header "Authorization: Bearer ${TOKEN}" \
   --data '{
     "parksList": {
-      "list": "'"${LIST}"'"
+      "list": ["acad","dena"]
     }
   }'
 
