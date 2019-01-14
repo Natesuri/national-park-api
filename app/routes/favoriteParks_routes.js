@@ -22,7 +22,7 @@ const customErrors = require('../../lib/custom_errors')
 const handle404 = customErrors.handle404
 // we'll use this function to send 401 when a user tries to modify a resource
 // that's owned by someone else
-// const requireOwnership = customErrors.requireOwnership
+const requireOwnership = customErrors.requireOwnership
 
 // passing this as a second argument to `router.<verb>` will make it
 // so that a token MUST be passed for that route to be available
@@ -51,13 +51,50 @@ const checkFavoriteParksLength = favoriteParks => {
 }
 
 // SHOW
-// GET /posts/5a7db6c74d55bc51bdf39793
-router.get('/favoriteParks/:id', (req, res) => {
+router.get('/favoriteParks/:id', requireToken, (req, res) => {
   // req.params.id will be set based on the `:id` in the route
   FavoriteParks.findById(req.params.id) // .populate('owner', 'nickname')
     .then(handle404)
     // if `findById` is succesful, respond with 200 and "post" JSON
-    .then(post => res.status(200).json({ post: post.toObject() }))
+    .then(favoriteParks => res.status(200).json({ favoriteParks: favoriteParks }))
+    // if an error occurs, pass it to the handler
+    .catch(err => handle(err, res))
+})
+
+// UPDATE
+router.patch('/favoriteParks/:id/update', requireToken, (req, res) => {
+  // req.params.id will be set based on the `:id` in the route
+  FavoriteParks.findById(req.params.id)
+    .then(handle404)
+    .then(favoriteParks => {
+      // pass the `req` object and the Mongoose record to `requireOwnership`
+      // it will throw an error if the current user isn't the owner
+      requireOwnership(req, favoriteParks)
+      return favoriteParks.update(req.body.favoriteParks)
+    })
+    .then(favoriteParks => res.status(200).json({ favoriteParks: favoriteParks }))
+    // if an error occurs, pass it to the handler
+    .catch(err => handle(err, res))
+})
+
+// DELETE
+router.delete('/favoriteParks/:id/delete', requireToken, (req, res) => {
+  FavoriteParks.findById(req.params.id)
+    .then(handle404)
+    .then(favoriteParks => {
+      // throw an error if current user doesn't own `favoriteParks`
+      requireOwnership(req, favoriteParks)
+      User.findById(favoriteParks.owner)
+        .then(user => {
+          // changes the ParksList key in User to null 
+          user.userList = null
+          return user.save()
+        })
+      // delete the favoriteParks ONLY IF the above didn't throw
+      favoriteParks.remove()
+    })
+    // send back 204 and no content if the deletion succeeded
+    .then(() => res.sendStatus(204))
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
 })
@@ -102,10 +139,9 @@ router.post('/favoriteParks', requireToken, (req, res) => {
   FavoriteParks.create(req.body.favoriteParks)
     // respond to succesful `create` with status 201 and JSON of new "post"
     .then(park => {
-      const parkId = park._id
       User.findById(req.body.favoriteParks.owner)
         .then(user => {
-          user.userList = parkId
+          user.userList = park._id
           return user.save()
         })
       return park
