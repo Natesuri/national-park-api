@@ -22,7 +22,7 @@ const customErrors = require('../../lib/custom_errors')
 const handle404 = customErrors.handle404
 // we'll use this function to send 401 when a user tries to modify a resource
 // that's owned by someone else
-// const requireOwnership = customErrors.requireOwnership
+const requireOwnership = customErrors.requireOwnership
 
 // passing this as a second argument to `router.<verb>` will make it
 // so that a token MUST be passed for that route to be available
@@ -51,13 +51,16 @@ const checkFavoriteParksLength = favoriteParks => {
 }
 
 // SHOW
-// GET /posts/5a7db6c74d55bc51bdf39793
-router.get('/favoriteParks/:id', (req, res) => {
+router.get('/favoriteParks/:id', requireToken, (req, res) => {
   // req.params.id will be set based on the `:id` in the route
   FavoriteParks.findById(req.params.id) // .populate('owner', 'nickname')
     .then(handle404)
     // if `findById` is succesful, respond with 200 and "post" JSON
-    .then(post => res.status(200).json({ post: post.toObject() }))
+    .then(favoriteParks => res.status(200).json({ favoriteParks: favoriteParks }))
+    // if an error occurs, pass it to the handler
+    .catch(err => handle(err, res))
+})
+    .then(favoriteParks => res.status(200).json({ favoriteParks: favoriteParks }))
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
 })
