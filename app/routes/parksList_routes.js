@@ -4,6 +4,7 @@
 const express = require('express')
 // Passport docs: http://www.passportjs.org/docs/
 const passport = require('passport')
+const fetch = require('node-fetch')
 
 // pull in Mongoose model for posts
 const ParksList = require('../models/parksList')
@@ -39,6 +40,28 @@ router.get('/parksList/:id', (req, res) => {
     .then(handle404)
     // if `findById` is succesful, respond with 200 and "post" JSON
     .then(post => res.status(200).json({ post: post.toObject() }))
+    // if an error occurs, pass it to the handler
+    .catch(err => handle(err, res))
+})
+
+// EXPLORE PARKS
+// GET PARK DATA FROM NPS API
+router.get('/exploreParks/:id', (req, res) => {
+  // req.params.id will be set based on the `:id` in the route
+  ParksList.findById(req.params.id)
+    .then(handle404)
+    .then(parksList => {
+      // take list data, and form into comma seperated list
+      const parks = parksList.list.toString()
+      console.log(parks)
+      // create a query to the NPS api using the park codes with the parksList
+      return fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parks}&fields=images`)
+        // returns the response in json format
+        .then(res => res.json())
+        .catch(error => console.error(`error is `, error))
+    })
+    // adds the API response's data field (array of each park's data) to a parks object
+    .then(parksData => res.status(200).json({ parks: parksData.data }))
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
 })
