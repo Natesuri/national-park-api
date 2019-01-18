@@ -10,6 +10,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  userList: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'FavoriteParks',
+    required: false
+  },
   token: String
 }, {
   timestamps: true,
