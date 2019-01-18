@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const favoriteParksSchema = new mongoose.Schema({
   list: {
     type: Array,
-    required: true
+    required: false
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
