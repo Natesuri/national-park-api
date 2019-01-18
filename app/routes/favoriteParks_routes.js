@@ -77,6 +77,32 @@ router.patch('/favoriteParks/:id/update', requireToken, (req, res) => {
     .catch(err => handle(err, res))
 })
 
+// UPDATE
+router.patch('/favoriteParks/:id/updateOne', requireToken, (req, res) => {
+  // req.params.id will be set based on the `:id` in the route
+  FavoriteParks.findById(req.params.id)
+    .then(handle404)
+    .then(favoriteParks => {
+      // pass the `req` object and the Mongoose record to `requireOwnership`
+      // it will throw an error if the current user isn't the owner
+      requireOwnership(req, favoriteParks)
+
+      const newParksList = favoriteParks.list.includes(req.body.favoriteParks.list)
+        ? favoriteParks.list.filter(current => current !== req.body.favoriteParks.list)
+        : favoriteParks.list.concat(req.body.favoriteParks.list)
+
+      favoriteParks.list = newParksList
+
+      return favoriteParks.save()
+    })
+    .then(favoriteParks => {
+      console.log(favoriteParks)
+      res.status(200).json({ favoriteParks: favoriteParks })
+    })
+    // if an error occurs, pass it to the handler
+    .catch(err => handle(err, res))
+})
+
 // DELETE
 router.delete('/favoriteParks/:id/delete', requireToken, (req, res) => {
   FavoriteParks.findById(req.params.id)
