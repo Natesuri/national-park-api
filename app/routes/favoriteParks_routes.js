@@ -112,8 +112,8 @@ router.delete('/favoriteParks/:id/delete', requireToken, (req, res) => {
       requireOwnership(req, favoriteParks)
       User.findById(favoriteParks.owner)
         .then(user => {
-          // changes the ParksList key in User to null 
-          user.userList = null
+          // changes the userFavorites key in User to null
+          user.userFavorites = null
           return user.save()
         })
       // delete the favoriteParks ONLY IF the above didn't throw
@@ -167,7 +167,7 @@ router.post('/favoriteParks', requireToken, (req, res) => {
     .then(park => {
       User.findById(req.body.favoriteParks.owner)
         .then(user => {
-          user.userList = park._id
+          user.userFavorites = park._id
           return user.save()
         })
       return park
