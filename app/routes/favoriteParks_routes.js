@@ -50,6 +50,13 @@ const checkFavoriteParksLength = favoriteParks => {
   }
 }
 
+const getParkData = (parkCodes) => (
+  fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parkCodes.toString()}&fields=images`)
+    // returns the response in json format
+    .then(res => res.json())
+    .catch(error => console.error(`error is `, error))
+)
+
 // SHOW
 router.get('/favoriteParks/:id', requireToken, (req, res) => {
   // req.params.id will be set based on the `:id` in the route
@@ -137,21 +144,14 @@ router.get('/exploreParks/:id', (req, res) => {
       .then(parks => {
         // take list data, and form into comma seperated list
         // create a query to the NPS api using the park codes within the list data
-        return fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parks.toString()}&fields=images`)
-          // returns the response in json format
-          .then(res => res.json())
-          .catch(error => console.error(`error is `, error))
+        return getParkData(parks)
       })
       // adds the API response's data field (array of each park's data) to a parks object
       .then(parksData => res.status(200).json({ parks: parksData.data }))
       // if an error occurs, pass it to the handler
-      .catch(err => {
-        handle(err, res)
-      })
+      .catch(err => handle(err, res))
     // if :id is '0', then query the NPS api with the default list.
-    : fetch(`https://api.nps.gov/api/v1/parks?parkCode=${defaultParks.toString()}&fields=images`)
-      // returns the response in json format
-      .then(res => res.json())
+    : getParkData(defaultParks)
       .then(parksData => res.status(200).json({ parks: parksData.data }))
       .catch(error => console.error(`error is `, error))
 })
