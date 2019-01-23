@@ -34,21 +34,15 @@ const router = express.Router()
 
 const defaultParks = ['bicy', 'elma', 'yose', 'dena', 'piro', 'acad', 'yell', 'amis', 'grca', 'jotr']
 
-const checkFavoriteParksLength = favoriteParks => {
-  console.log(`my list is`, favoriteParks)
-  if (favoriteParks.list.length < 10) {
-    console.log('less than 10')
-    // if the user's favorite parks list is less than 10, concat defaultParks to their list
-    return favoriteParks.list.concat(defaultParks)
+const checkFavoriteParksLength = favoriteParksList => (
+  favoriteParksList.length < 10
+    ? favoriteParksList.concat(defaultParks)
       // remove duplicates
       .filter((current, index, self) => self.indexOf(current) === index)
       // and limit output to 10
       .slice(0, 10)
-  } else {
-    console.log('length 10 or greater')
-    return favoriteParks.list.slice(0, 10)
-  }
-}
+    : favoriteParksList.slice(0, 10)
+)
 
 const getParkData = (parkCodes) => (
   fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parkCodes.toString()}&fields=images`)
@@ -140,7 +134,7 @@ router.get('/exploreParks/:id', (req, res) => {
   req.params.id !== '0'
     ? FavoriteParks.findById(req.params.id)
       // function that adds common park to user's request in additional to the user's favorites
-      .then(checkFavoriteParksLength)
+      .then(favoriteParks => checkFavoriteParksLength(favoriteParks.list))
       .then(parks => {
         // take list data, and form into comma seperated list
         // create a query to the NPS api using the park codes within the list data
