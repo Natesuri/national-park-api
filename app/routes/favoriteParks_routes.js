@@ -44,6 +44,7 @@ const checkFavoriteParksLength = favoriteParksList => (
     : favoriteParksList.slice(0, 10)
 )
 
+// Makes a request to the NPS api /parks endpoint.
 const getParkData = (parkCodes) => (
   fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parkCodes.toString()}&fields=images`)
     // returns the response in json format
@@ -56,8 +57,12 @@ router.get('/favoriteParks/:id', requireToken, (req, res) => {
   // req.params.id will be set based on the `:id` in the route
   FavoriteParks.findById(req.params.id) // .populate('owner', 'nickname')
     .then(handle404)
+    .then(favoriteParks => {
+      // create a query to the NPS api using the parkCodes stores in favoriteParks.list
+      return getParkData(favoriteParks.list)
+    })
     // if `findById` is succesful, respond with 200 and "post" JSON
-    .then(favoriteParks => res.status(200).json({ favoriteParks: favoriteParks }))
+    .then(favoriteParksData => res.status(200).json({ favoriteParksData: favoriteParksData.data }))
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
 })
@@ -80,6 +85,7 @@ router.patch('/favoriteParks/:id/update', requireToken, (req, res) => {
 
 // UPDATE
 router.patch('/favoriteParks/:id/updateOne', requireToken, (req, res) => {
+  let favoriteParksId
   // req.params.id will be set based on the `:id` in the route
   FavoriteParks.findById(req.params.id)
     .then(handle404)
@@ -97,8 +103,11 @@ router.patch('/favoriteParks/:id/updateOne', requireToken, (req, res) => {
       return favoriteParks.save()
     })
     .then(favoriteParks => {
-      console.log(favoriteParks)
-      res.status(200).json({ favoriteParks: favoriteParks })
+      favoriteParksId = favoriteParks._id
+      return getParkData(favoriteParks.list)
+    })
+    .then(favoriteParksData => {
+      res.status(200).json({ favoriteParksId, favoriteParksData: favoriteParksData.data })
     })
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
@@ -155,19 +164,24 @@ router.get('/exploreParks/:id', (req, res) => {
 router.post('/favoriteParks', requireToken, (req, res) => {
   // set owner of new post to be current user
   req.body.favoriteParks.owner = req.user.id
+  let favoriteParksId
 
   FavoriteParks.create(req.body.favoriteParks)
     // respond to succesful `create` with status 201 and JSON of new "post"
-    .then(park => {
+    .then(favoriteParks => {
       User.findById(req.body.favoriteParks.owner)
         .then(user => {
-          user.userFavorites = park._id
+          user.userFavorites = favoriteParks._id
           return user.save()
         })
-      return park
+      return favoriteParks
     })
     .then(favoriteParks => {
-      res.status(201).json({ favoriteParks: favoriteParks.toObject() })
+      favoriteParksId = favoriteParks._id
+      return getParkData(favoriteParks.list)
+    })
+    .then(favoriteParksData => {
+      res.status(201).json({ favoriteParksId, favoriteParksData: favoriteParksData.data })
     })
     // if an error occurs, pass it off to our error handler
     // the error handler needs the error message and the `res` object so that it
