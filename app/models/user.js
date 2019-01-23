@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  userList: {
+  userFavorites: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'FavoriteParks',
     required: false
