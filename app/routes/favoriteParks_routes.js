@@ -68,22 +68,6 @@ router.get('/favoriteParks/:id', requireToken, (req, res) => {
 })
 
 // UPDATE
-router.patch('/favoriteParks/:id/update', requireToken, (req, res) => {
-  // req.params.id will be set based on the `:id` in the route
-  FavoriteParks.findById(req.params.id)
-    .then(handle404)
-    .then(favoriteParks => {
-      // pass the `req` object and the Mongoose record to `requireOwnership`
-      // it will throw an error if the current user isn't the owner
-      requireOwnership(req, favoriteParks)
-      return favoriteParks.update(req.body.favoriteParks)
-    })
-    .then(favoriteParks => res.status(200).json({ favoriteParks: favoriteParks }))
-    // if an error occurs, pass it to the handler
-    .catch(err => handle(err, res))
-})
-
-// UPDATE
 router.patch('/favoriteParks/:id/updateOne', requireToken, (req, res) => {
   let favoriteParksId
   // req.params.id will be set based on the `:id` in the route
@@ -109,28 +93,6 @@ router.patch('/favoriteParks/:id/updateOne', requireToken, (req, res) => {
     .then(favoriteParksData => {
       res.status(200).json({ favoriteParksId, favoriteParksData: favoriteParksData.data })
     })
-    // if an error occurs, pass it to the handler
-    .catch(err => handle(err, res))
-})
-
-// DELETE
-router.delete('/favoriteParks/:id/delete', requireToken, (req, res) => {
-  FavoriteParks.findById(req.params.id)
-    .then(handle404)
-    .then(favoriteParks => {
-      // throw an error if current user doesn't own `favoriteParks`
-      requireOwnership(req, favoriteParks)
-      User.findById(favoriteParks.owner)
-        .then(user => {
-          // changes the userFavorites key in User to null
-          user.userFavorites = null
-          return user.save()
-        })
-      // delete the favoriteParks ONLY IF the above didn't throw
-      favoriteParks.remove()
-    })
-    // send back 204 and no content if the deletion succeeded
-    .then(() => res.sendStatus(204))
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
 })
