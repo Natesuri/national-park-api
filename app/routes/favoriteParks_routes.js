@@ -45,12 +45,14 @@ const checkFavoriteParksLength = favoriteParksList => (
 )
 
 // Makes a request to the NPS api /parks endpoint.
-const getParkData = (parkCodes) => (
-  fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parkCodes.toString()}&fields=images`)
-    // returns the response in json format
-    .then(res => res.json())
-    .catch(error => console.error(`error is `, error))
-)
+const getParkData = (parkCodes) => {
+  return parkCodes[0]
+    ? fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parkCodes.toString()}&fields=images`)
+      // returns the response in json format
+      .then(res => res.json())
+      .catch(error => console.error(`error is `, error))
+    : { data: null }
+}
 
 // SHOW
 router.get('/favoriteParks/:id', requireToken, (req, res) => {
@@ -102,17 +104,24 @@ router.patch('/favoriteParks/:id/updateOne', requireToken, (req, res) => {
 router.get('/exploreParks/:id', (req, res) => {
   // req.params.id will be set based on the `:id` in the route
   // if :id is not '0', check for the park by it's id
+  let favoriteParksList
   req.params.id !== '0'
     ? FavoriteParks.findById(req.params.id)
       // function that adds common park to user's request in additional to the user's favorites
-      .then(favoriteParks => checkFavoriteParksLength(favoriteParks.list))
+      .then(favoriteParks => {
+        favoriteParksList = favoriteParks.list
+        return checkFavoriteParksLength(favoriteParksList)
+      })
       .then(parks => {
         // take list data, and form into comma seperated list
         // create a query to the NPS api using the park codes within the list data
         return getParkData(parks)
       })
       // adds the API response's data field (array of each park's data) to a parks object
-      .then(parksData => res.status(200).json({ parks: parksData.data }))
+      .then(parksData => {
+        const favoriteParksData = parksData.data.filter(park => favoriteParksList.includes(park.parkCode))
+        return res.status(200).json({ parks: parksData.data, favoriteParksData })
+      })
       // if an error occurs, pass it to the handler
       .catch(err => handle(err, res))
     // if :id is '0', then query the NPS api with the default list.
