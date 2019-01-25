@@ -34,20 +34,24 @@ const router = express.Router()
 
 const defaultParks = ['bicy', 'elma', 'yose', 'dena', 'piro', 'acad', 'yell', 'amis', 'grca', 'jotr']
 
-const checkFavoriteParksLength = favoriteParks => {
-  console.log(`my list is`, favoriteParks)
-  if (favoriteParks.list.length < 10) {
-    console.log('less than 10')
-    // if the user's favorite parks list is less than 10, concat defaultParks to their list
-    return favoriteParks.list.concat(defaultParks)
+const checkFavoriteParksLength = favoriteParksList => (
+  favoriteParksList.length < 10
+    ? favoriteParksList.concat(defaultParks)
       // remove duplicates
       .filter((current, index, self) => self.indexOf(current) === index)
       // and limit output to 10
       .slice(0, 10)
-  } else {
-    console.log('length 10 or greater')
-    return favoriteParks.list.slice(0, 10)
-  }
+    : favoriteParksList.slice(0, 10)
+)
+
+// Makes a request to the NPS api /parks endpoint.
+const getParkData = (parkCodes) => {
+  return parkCodes[0]
+    ? fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parkCodes.toString()}&fields=images`)
+      // returns the response in json format
+      .then(res => res.json())
+      .catch(error => console.error(`error is `, error))
+    : { data: null }
 }
 
 // SHOW
@@ -55,30 +59,19 @@ router.get('/favoriteParks/:id', requireToken, (req, res) => {
   // req.params.id will be set based on the `:id` in the route
   FavoriteParks.findById(req.params.id) // .populate('owner', 'nickname')
     .then(handle404)
-    // if `findById` is succesful, respond with 200 and "post" JSON
-    .then(favoriteParks => res.status(200).json({ favoriteParks: favoriteParks }))
-    // if an error occurs, pass it to the handler
-    .catch(err => handle(err, res))
-})
-
-// UPDATE
-router.patch('/favoriteParks/:id/update', requireToken, (req, res) => {
-  // req.params.id will be set based on the `:id` in the route
-  FavoriteParks.findById(req.params.id)
-    .then(handle404)
     .then(favoriteParks => {
-      // pass the `req` object and the Mongoose record to `requireOwnership`
-      // it will throw an error if the current user isn't the owner
-      requireOwnership(req, favoriteParks)
-      return favoriteParks.update(req.body.favoriteParks)
+      // create a query to the NPS api using the parkCodes stores in favoriteParks.list
+      return getParkData(favoriteParks.list)
     })
-    .then(favoriteParks => res.status(200).json({ favoriteParks: favoriteParks }))
+    // if `findById` is succesful, respond with 200 and "post" JSON
+    .then(favoriteParksData => res.status(200).json({ favoriteParksData: favoriteParksData.data }))
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
 })
 
 // UPDATE
 router.patch('/favoriteParks/:id/updateOne', requireToken, (req, res) => {
+  let favoriteParksId
   // req.params.id will be set based on the `:id` in the route
   FavoriteParks.findById(req.params.id)
     .then(handle404)
@@ -96,31 +89,12 @@ router.patch('/favoriteParks/:id/updateOne', requireToken, (req, res) => {
       return favoriteParks.save()
     })
     .then(favoriteParks => {
-      console.log(favoriteParks)
-      res.status(200).json({ favoriteParks: favoriteParks })
+      favoriteParksId = favoriteParks._id
+      return getParkData(favoriteParks.list)
     })
-    // if an error occurs, pass it to the handler
-    .catch(err => handle(err, res))
-})
-
-// DELETE
-router.delete('/favoriteParks/:id/delete', requireToken, (req, res) => {
-  FavoriteParks.findById(req.params.id)
-    .then(handle404)
-    .then(favoriteParks => {
-      // throw an error if current user doesn't own `favoriteParks`
-      requireOwnership(req, favoriteParks)
-      User.findById(favoriteParks.owner)
-        .then(user => {
-          // changes the ParksList key in User to null 
-          user.userList = null
-          return user.save()
-        })
-      // delete the favoriteParks ONLY IF the above didn't throw
-      favoriteParks.remove()
+    .then(favoriteParksData => {
+      res.status(200).json({ favoriteParksId, favoriteParksData: favoriteParksData.data })
     })
-    // send back 204 and no content if the deletion succeeded
-    .then(() => res.sendStatus(204))
     // if an error occurs, pass it to the handler
     .catch(err => handle(err, res))
 })
@@ -130,28 +104,28 @@ router.delete('/favoriteParks/:id/delete', requireToken, (req, res) => {
 router.get('/exploreParks/:id', (req, res) => {
   // req.params.id will be set based on the `:id` in the route
   // if :id is not '0', check for the park by it's id
+  let favoriteParksList
   req.params.id !== '0'
     ? FavoriteParks.findById(req.params.id)
       // function that adds common park to user's request in additional to the user's favorites
-      .then(checkFavoriteParksLength)
+      .then(favoriteParks => {
+        favoriteParksList = favoriteParks.list
+        return checkFavoriteParksLength(favoriteParksList)
+      })
       .then(parks => {
         // take list data, and form into comma seperated list
         // create a query to the NPS api using the park codes within the list data
-        return fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parks.toString()}&fields=images`)
-          // returns the response in json format
-          .then(res => res.json())
-          .catch(error => console.error(`error is `, error))
+        return getParkData(parks)
       })
       // adds the API response's data field (array of each park's data) to a parks object
-      .then(parksData => res.status(200).json({ parks: parksData.data }))
-      // if an error occurs, pass it to the handler
-      .catch(err => {
-        handle(err, res)
+      .then(parksData => {
+        const favoriteParksData = parksData.data.filter(park => favoriteParksList.includes(park.parkCode))
+        return res.status(200).json({ parks: parksData.data, favoriteParksData })
       })
+      // if an error occurs, pass it to the handler
+      .catch(err => handle(err, res))
     // if :id is '0', then query the NPS api with the default list.
-    : fetch(`https://api.nps.gov/api/v1/parks?parkCode=${defaultParks.toString()}&fields=images`)
-      // returns the response in json format
-      .then(res => res.json())
+    : getParkData(defaultParks)
       .then(parksData => res.status(200).json({ parks: parksData.data }))
       .catch(error => console.error(`error is `, error))
 })
@@ -161,19 +135,24 @@ router.get('/exploreParks/:id', (req, res) => {
 router.post('/favoriteParks', requireToken, (req, res) => {
   // set owner of new post to be current user
   req.body.favoriteParks.owner = req.user.id
+  let favoriteParksId
 
   FavoriteParks.create(req.body.favoriteParks)
     // respond to succesful `create` with status 201 and JSON of new "post"
-    .then(park => {
+    .then(favoriteParks => {
       User.findById(req.body.favoriteParks.owner)
         .then(user => {
-          user.userList = park._id
+          user.userFavorites = favoriteParks._id
           return user.save()
         })
-      return park
+      return favoriteParks
     })
     .then(favoriteParks => {
-      res.status(201).json({ favoriteParks: favoriteParks.toObject() })
+      favoriteParksId = favoriteParks._id
+      return getParkData(favoriteParks.list)
+    })
+    .then(favoriteParksData => {
+      res.status(201).json({ favoriteParksId, favoriteParksData: favoriteParksData.data })
     })
     // if an error occurs, pass it off to our error handler
     // the error handler needs the error message and the `res` object so that it
