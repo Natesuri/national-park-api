@@ -45,12 +45,14 @@ const checkFavoriteParksLength = favoriteParksList => (
 )
 
 // Makes a request to the NPS api /parks endpoint.
-const getParkData = (parkCodes) => (
-  fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parkCodes.toString()}&fields=images`)
-    // returns the response in json format
-    .then(res => res.json())
-    .catch(error => console.error(`error is `, error))
-)
+const getParkData = (parkCodes) => {
+  return parkCodes[0]
+    ? fetch(`https://api.nps.gov/api/v1/parks?parkCode=${parkCodes.toString()}&fields=images`)
+      // returns the response in json format
+      .then(res => res.json())
+      .catch(error => console.error(`error is `, error))
+    : { data: null }
+}
 
 // SHOW
 router.get('/favoriteParks/:id', requireToken, (req, res) => {
