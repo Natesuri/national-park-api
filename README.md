@@ -1,6 +1,73 @@
+01/25/19
+
+# National Park Finder
+
+Front End Repo: https://github.com/Natesuri/national-park-client
+
+Backend Repo: https://github.com/Natesuri/national-park-api
+
+Deployed Site: https://natesuri.github.io/national-park-client/#/
+
+<img width="1680" alt="screen shot 2019-01-25 at 12 14 05 pm" src="https://user-images.githubusercontent.com/35355802/51761335-cd202880-209a-11e9-98d7-677e29baebf9.png">
+
+
+
+#### About
+
+The National Park Finder allows users to look through a set of national parks, learn more about them, see a few pictures from each park and add their favorite parks to a list if they choose to sign in.
+
+
+
+#### Technologies Used
+
+The National Park Finder front end uses React, CSS, and SASS. React is an ideal technology for this app because when the user changes which park to learn more about, the data can be quickly loaded from state to re-render the page.
+
+The backend uses the remainder of the MERN stack: Mongo, Express, and Node.
+
+
+
+#### Open-source Contribution
+
+If anyone wants to contribute to the project, please fork and clone this repo, then run `npm instal`l to make sure the correct versions of all dependencies have been installed.
+
+##### Possible Features to work on
+
+- Current weather data for parks using lat /long.
+- Driving duration from user's location to the park.
+- Accessing the NPS `/alerts` and `/events` endpoints to show updates for Explored Parks.
+-  Implement a quiz that will return "best fit" parks based on a user's answers.
+
+
+
+#### Routes and endpoints
+
+Park Routes
+
+| Request type | Route                          | Action                                                       | Return if Successful             |
+| ------------ | ------------------------------ | ------------------------------------------------------------ | -------------------------------- |
+| SHOW         | `/favoriteParks/:id`           | Fetches a user's favoriteParks                               | 200 / favoriteParks              |
+| PATCH        | `/favoriteParks/:id/updateOne` | Adds or removes park from user's favoriteParks               | 204 / Updated favoriteParks      |
+| POST         | `/favoriteParks`               | Creates a new favoriteParks item, and assigns it's id to user's userFavorites. | 201 / new favoriteParks          |
+| SHOW         | `/exploreParks/:id`            | Gets a list of 10 parks. A combination of the user's and default parks | 204 / allParks and favoriteParks |
+
+User Routes
+
+### Authentication
+
+| Request type | Route              | Action                  | Return if Successful         |
+| ------------ | ------------------ | ----------------------- | ---------------------------- |
+| POST         | `/sign-up`         | Creates a new user      | 201 / user object            |
+| POST         | `/sign-in`         | Checks credentials      | 201 / user object with token |
+| PATCH        | `/change-password` | Hashes new password     | 204                          |
+| DELETE       | `/sign-out`        | Hashes stored Api Token | 204                          |
+
+
+###  --- Previous Planning and Documentation ---
+
+
 01/11/2019
 
-# Planning and Documentation
+## Planning and Documentation
 
 ### App
 
@@ -22,9 +89,7 @@ Currently planned APIs (as of 01/12/19):
 
 ## User Stories
 
-https://github.com/typora/typora-issues/issues/358 (fix image size)
-
-![User Stories 20190111_153742 sq](/Users/natesuripro/Dropbox/GA/Project_4_NPS_Capstone/Documentation/User Stories 20190111_153742 sq.jpg)
+https://www.dropbox.com/s/pkw4v4prrq7n3io/User%20Stories%2020190111_153742%20sq.jpg?dl=0
 
 #### Page Actions
 
@@ -63,7 +128,7 @@ https://github.com/typora/typora-issues/issues/358 (fix image size)
 
 ### Story Tree
 
-![Story Tree v2 20190111_164136](/Users/natesuripro/Dropbox/GA/Project_4_NPS_Capstone/Documentation/Story Tree v2 20190111_164136.jpg)
+https://www.dropbox.com/s/5ttmdql7od2t1nq/Story%20Tree%20v2%2020190111_164136.jpg?dl=0
 
 **Lock Symbol Signifies Authenticated Route*
 
@@ -82,7 +147,7 @@ From Home a user can
 
 ### ERD
 
-![ERD 20190111_164927 copy](/Users/natesuripro/Dropbox/GA/Project_4_NPS_Capstone/Documentation/ERD 20190111_164927 copy.jpg)
+https://www.dropbox.com/s/kicjgg0n8ycq6us/ERD%2020190111_164927%20copy.jpg?dl=0
 
 The User's will have their authenication values as well as a lat/long of their current location
 
